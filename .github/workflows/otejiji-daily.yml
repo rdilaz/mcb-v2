@@ -34,9 +34,9 @@ jobs:
 
       - name: Analyze games and build today's episode
         env:
-          CHESS_USERNAME: ${{ vars.CHESS_USERNAME || 'roygbiv6' }}
+          CHESS_USERNAME: "${{ vars.CHESS_USERNAME || 'roygbiv6' }}"
           STOCKFISH_PATH: /usr/games/stockfish
-          MCB_CTA: ${{ vars.MCB_CTA || 'Find your most common blunder: mcb.ryo-nd.com' }}
+          MCB_CTA: "${{ vars.MCB_CTA || 'Find your most common blunder: mcb.ryo-nd.com' }}"
         run: python -m otejiji.run --out out
 
       - name: Upload episode
