@@ -1,0 +1,80 @@
+name: Otejiji daily episode
+
+on:
+  schedule:
+    - cron: "7 23 * * *"   # 23:07 UTC = 7:07pm ET (6:07pm in winter)
+  workflow_dispatch: {}
+  pull_request:
+    paths: ["otejiji/**", "mcb_core/**", ".github/workflows/otejiji-daily.yml"]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: otejiji
+  cancel-in-progress: false
+
+jobs:
+  episode:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: System packages (Stockfish, ffmpeg, cairo, fonts)
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q stockfish ffmpeg libcairo2 fonts-dejavu-core
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - run: pip install -r requirements.txt
+
+      - name: Analyze games and build today's episode
+        env:
+          CHESS_USERNAME: "${{ vars.CHESS_USERNAME || 'roygbiv6' }}"
+          STOCKFISH_PATH: /usr/games/stockfish
+          MCB_CTA: "${{ vars.MCB_CTA || 'Find your most common blunder: mcb.ryo-nd.com' }}"
+        run: |
+          set -o pipefail
+          python -u -m otejiji.run --out out 2>&1 | tee run.log
+
+      - name: Report run log (readable as an annotation)
+        if: always()
+        run: |
+          if [ -f run.log ]; then
+            msg=$(tail -n 40 run.log | sed -e 's/%/%25/g' -e 's/\r/%0D/g' | awk 'BEGIN{ORS="%0A"}{print}')
+            echo "::notice title=otejiji run log::$msg"
+          fi
+
+      - name: Upload episode
+        uses: actions/upload-artifact@v4
+        with:
+          name: otejiji-episode-${{ github.run_number }}
+          path: |
+            out/episode.mp4
+            out/caption.txt
+            out/episode.json
+            out/NO_EPISODE
+          if-no-files-found: ignore
+          retention-days: 30
+
+      - name: Publish episode (newest is always at releases/latest/download/episode.mp4)
+        if: github.event_name != 'pull_request' && hashFiles('out/episode.mp4') != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="ep-$(date -u +%Y%m%d-%H%M)"
+          gh release create "$TAG" out/episode.mp4 out/caption.txt \
+            --title "Otejiji $(date -u +%F)" --notes-file out/caption.txt --latest
+
+      - name: Save state (analyzed games, used blunders)
+        if: github.event_name != 'pull_request'
+        run: |
+          git config user.name "otejiji-bot"
+          git config user.email "otejiji-bot@users.noreply.github.com"
+          git add state/
+          git diff --cached --quiet || git commit -m "otejiji: daily state [skip ci]"
+          git push
