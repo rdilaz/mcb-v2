@@ -98,7 +98,7 @@ def build(segments, assets, workdir, out_path, theme=None):
 
     lst = os.path.join(workdir, "parts.txt")
     with open(lst, "w") as f:
-        f.writelines(f"file '{p}'\n" for p in parts)
+        f.writelines(f"file '{os.path.abspath(p)}'\n" for p in parts)  # concat resolves relative to the list file
     joined = os.path.join(workdir, "joined.mp4")
     _run(["ffmpeg", "-v", "error", "-y", "-f", "concat", "-safe", "0", "-i", lst, "-c", "copy", joined])
 
