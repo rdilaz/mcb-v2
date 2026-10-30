@@ -61,6 +61,15 @@ jobs:
           if-no-files-found: ignore
           retention-days: 30
 
+      - name: Publish episode (newest is always at releases/latest/download/episode.mp4)
+        if: github.event_name != 'pull_request' && hashFiles('out/episode.mp4') != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="ep-$(date -u +%Y%m%d-%H%M)"
+          gh release create "$TAG" out/episode.mp4 out/caption.txt \
+            --title "Otejiji $(date -u +%F)" --notes-file out/caption.txt --latest
+
       - name: Save state (analyzed games, used blunders)
         if: github.event_name != 'pull_request'
         run: |

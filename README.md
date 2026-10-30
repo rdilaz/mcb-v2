@@ -13,7 +13,8 @@ verified blunder into a short vertical video starring **Otejiji**, an AI chess g
    is never AI-drawn and never wrong.
 4. **Render**: real board frames, subtitles, the lesson card, and an "AI character" tag.
 5. **Assemble**: ffmpeg builds `episode.mp4` (1080x1920, about 18-25 s) plus `caption.txt`.
-6. **Output**: the episode is attached to the workflow run as an artifact.
+6. **Output**: the episode is published as a GitHub release. The newest one is always at
+   https://github.com/rdilaz/mcb-v2/releases/latest/download/episode.mp4
 
 Posting is the next increment (see below).
 
