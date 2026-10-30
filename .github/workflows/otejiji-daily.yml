@@ -37,7 +37,17 @@ jobs:
           CHESS_USERNAME: "${{ vars.CHESS_USERNAME || 'roygbiv6' }}"
           STOCKFISH_PATH: /usr/games/stockfish
           MCB_CTA: "${{ vars.MCB_CTA || 'Find your most common blunder: mcb.ryo-nd.com' }}"
-        run: python -m otejiji.run --out out
+        run: |
+          set -o pipefail
+          python -u -m otejiji.run --out out 2>&1 | tee run.log
+
+      - name: Report run log (readable as an annotation)
+        if: always()
+        run: |
+          if [ -f run.log ]; then
+            msg=$(tail -n 40 run.log | sed -e 's/%/%25/g' -e 's/\r/%0D/g' | awk 'BEGIN{ORS="%0A"}{print}')
+            echo "::notice title=otejiji run log::$msg"
+          fi
 
       - name: Upload episode
         uses: actions/upload-artifact@v4
