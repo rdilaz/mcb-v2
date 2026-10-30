@@ -4,6 +4,8 @@ on:
   schedule:
     - cron: "7 23 * * *"   # 23:07 UTC = 7:07pm ET (6:07pm in winter)
   workflow_dispatch: {}
+  pull_request:
+    paths: ["otejiji/**", "mcb_core/**", ".github/workflows/otejiji-daily.yml"]
 
 permissions:
   contents: write
@@ -50,6 +52,7 @@ jobs:
           retention-days: 30
 
       - name: Save state (analyzed games, used blunders)
+        if: github.event_name != 'pull_request'
         run: |
           git config user.name "otejiji-bot"
           git config user.email "otejiji-bot@users.noreply.github.com"
